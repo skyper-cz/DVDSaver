@@ -6,6 +6,8 @@ import org.lwjgl.opengl.GL33;
 
 
 import static cz.educanet.Main.*;
+import static org.lwjgl.glfw.GLFW.*;
+import static org.lwjgl.opengl.GL11.GL_TRUE;
 
 
 public class Window {
@@ -13,6 +15,8 @@ public class Window {
 
 
         GLFW.glfwInit();
+        GLFW.glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);// To make MacOS happy; should not be needed
+        GLFW.glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
         GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MAJOR, 3);
         GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MINOR, 3);
         long window = GLFW.glfwCreateWindow(W, H, "DVDSaver", 0, 0);
