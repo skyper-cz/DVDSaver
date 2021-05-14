@@ -17,6 +17,7 @@ public class Window {
         GLFW.glfwInit();
         GLFW.glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);// To make MacOS happy; should not be needed
         GLFW.glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+        GLFW.glfwWindowHint(GLFW_SAMPLES, 4);
         GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MAJOR, 3);
         GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MINOR, 3);
         long window = GLFW.glfwCreateWindow(W, H, "DVDSaver", 0, 0);
