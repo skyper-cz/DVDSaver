@@ -4,87 +4,77 @@ import org.joml.Matrix4f;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.opengl.GL33;
+import org.lwjgl.stb.STBImage;
+import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.MemoryUtil;
 
+import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 
 public class Player {
+    private final float[] vertices = {
+            0.125f, 0.125f, 0f,
+            0.125f, -0.125f, 0f,
+            -0.125f, -0.125f, 0f,
+            -0.125f, 0.125f, 0f,
+    };
+
+    private float[] colors = {
+            1.0f, 0.0f, 0.0f,
+            1.0f, 0.0f, 0.0f,
+            1.0f, 0.0f, 0.0f,
+            1.0f, 0.0f, 0.0f,
+    };
+
     private final int[] indices = {
             0, 1, 3,
             1, 2, 3
     };
+    private static final float[] textures = {
+            1.0f, 0.0f,
+            1.0f, 1.0f,
+            0.0f, 1.0f,
+            0.0f, 0.0f,
+    };
 
-    public static int uniformMatrixLocation;
-    public Matrix4f matrix;
-    public FloatBuffer matrixFloatBuffer;
-    public int squareVaoId;
-    public int squareVboId;
-    private final int squareColorId;
-    public float[] green;
-    public float[] red;
-    private final FloatBuffer cfb;
-    private float x;
-    private float y;
-    private final float z;
+    private final int squareVaoId;
+    private final int squareVboId;
+    private final int squareEboId;
+    private final int colorsId;
 
-    public Player(float x, float y, float z) {
-        this.x = x;
-        this.y = y;
-        this.z = z;
-        matrixFloatBuffer = BufferUtils.createFloatBuffer(16);
-        matrix = new Matrix4f().identity();
+    private static int uniformColorLocation;
+    private static int uniformMatrixLocation;
 
-        green = new float[]{
-                1f, 0f, 0f, 1f,
-                1f, 0f, 0f, 1f,
-                1f, 0f, 0f, 1f,
-                1f, 0f, 0f, 1f,
-        };
-        red = new float[]{
-                0f, 1f, 0f, 1f,
-                0f, 1f, 0f, 1f,
-                0f, 1f, 0f, 1f,
-                0f, 1f, 0f, 1f,
-        };
+    private static int textureIndicesId;
+    private static int textureId;
 
-        float[] colors = {
-                1f, 1f, 1f, 1f,
-                1f, 1f, 1f, 1f,
-                1f, 1f, 1f, 1f,
-                1f, 1f, 1f, 1f,
-        };
+    private static Matrix4f matrix = new Matrix4f()
+            .identity();
+    private static FloatBuffer matrixBuffer = BufferUtils.createFloatBuffer(16);
 
-        float[] vertices = {
-                x + z, y, 0.0f,
-                x + z, y - z, 0.0f,
-                x, y - z, 0.0f,
-                x, y, 0.0f,
-        };
+    public Player() {
+        uniformColorLocation = GL33.glGetUniformLocation(Shaders.shaderProgramId, "outColor");
+        uniformMatrixLocation = GL33.glGetUniformLocation(Shaders.shaderProgramId, "matrix");
 
-        cfb = BufferUtils.createFloatBuffer(red.length).put(red).flip();
 
         squareVaoId = GL33.glGenVertexArrays();
-        int squareEboId = GL33.glGenBuffers();
         squareVboId = GL33.glGenBuffers();
-        squareColorId = GL33.glGenBuffers();
+        squareEboId = GL33.glGenBuffers();
+        colorsId = GL33.glGenBuffers();
+        textureIndicesId = GL33.glGenBuffers();
+        textureId = GL33.glGenTextures();
 
-        uniformMatrixLocation = GL33.glGetUniformLocation(Shaders.shaderProgramId, "matrix");
         GL33.glBindVertexArray(squareVaoId);
+
         GL33.glBindBuffer(GL33.GL_ELEMENT_ARRAY_BUFFER, squareEboId);
         IntBuffer ib = BufferUtils.createIntBuffer(indices.length)
                 .put(indices)
                 .flip();
         GL33.glBufferData(GL33.GL_ELEMENT_ARRAY_BUFFER, ib, GL33.GL_STATIC_DRAW);
-        GL33.glBindBuffer(GL33.GL_ARRAY_BUFFER, squareColorId);
-        FloatBuffer cfb = BufferUtils.createFloatBuffer(colors.length).put(colors).flip();
-        GL33.glBufferData(GL33.GL_ARRAY_BUFFER, cfb, GL33.GL_STATIC_DRAW);
-        GL33.glVertexAttribPointer(1, 4, GL33.GL_FLOAT, false, 0, 0);
-        GL33.glEnableVertexAttribArray(1);
-
-        MemoryUtil.memFree(cfb);
 
         GL33.glBindBuffer(GL33.GL_ARRAY_BUFFER, squareVboId);
+
         FloatBuffer fb = BufferUtils.createFloatBuffer(vertices.length)
                 .put(vertices)
                 .flip();
@@ -92,77 +82,193 @@ public class Player {
         GL33.glBufferData(GL33.GL_ARRAY_BUFFER, fb, GL33.GL_STATIC_DRAW);
         GL33.glVertexAttribPointer(0, 3, GL33.GL_FLOAT, false, 0, 0);
         GL33.glEnableVertexAttribArray(0);
+
+
         GL33.glUseProgram(Shaders.shaderProgramId);
-        matrix.get(matrixFloatBuffer);
-        GL33.glUniformMatrix4fv(uniformMatrixLocation, false, matrixFloatBuffer);
+        GL33.glUniform3f(uniformColorLocation, 1.0f, 0.0f, 0.0f);
+
+        matrix.get(matrixBuffer);
+        GL33.glUniformMatrix4fv(uniformMatrixLocation, false, matrixBuffer);
+
+        GL33.glBufferData(GL33.GL_ARRAY_BUFFER, fb, GL33.GL_STATIC_DRAW);
+        GL33.glVertexAttribPointer(0,3, GL33.GL_FLOAT, false, 0, 0);
+        GL33.glEnableVertexAttribArray(0);
+
+        GL33.glBindBuffer(GL33.GL_ARRAY_BUFFER, colorsId);
+
+        FloatBuffer cb = BufferUtils.createFloatBuffer(colors.length)
+                .put(colors)
+                .flip();
+
+        GL33.glBufferData(GL33.GL_ARRAY_BUFFER, cb, GL33.GL_STATIC_DRAW);
+        GL33.glVertexAttribPointer(1,3, GL33.GL_FLOAT, false, 0, 0);
+        GL33.glEnableVertexAttribArray(1);
+
+        GL33.glBindBuffer(GL33.GL_ARRAY_BUFFER, textureIndicesId);
+
+        FloatBuffer tb = BufferUtils.createFloatBuffer(textures.length)
+                .put(textures)
+                .flip();
+
+        GL33.glBufferData(GL33.GL_ARRAY_BUFFER, tb, GL33.GL_STATIC_DRAW);
+        GL33.glVertexAttribPointer(2, 2, GL33.GL_FLOAT, false, 0, 0);
+        GL33.glEnableVertexAttribArray(2);
 
         MemoryUtil.memFree(fb);
-        MemoryUtil.memFree(ib);
     }
 
+    public float[] getVertices() {
+        return vertices;
+    }
+
+    public float[] getColors() {
+        return colors;
+    }
+
+    public int[] getIndices() {
+        return indices;
+    }
+
+    public int getSquareVaoId() {
+        return squareVaoId;
+    }
+
+    public int getSquareVboId() {
+        return squareVboId;
+    }
+
+    public int getSquareEboId() {
+        return squareEboId;
+    }
+
+    public int getColorsId() {
+        return colorsId;
+    }
+
+    public static Matrix4f getMatrix() {
+        return matrix;
+    }
+
+    public int getUniformColorLocation() {
+        return uniformColorLocation;
+    }
+
+    public static int getUniformMatrixLocation() {
+        return uniformMatrixLocation;
+    }
+
+    public static FloatBuffer getMatrixBuffer() {
+        return matrixBuffer;
+    }
+
+    public void setColors(float[] newColors) {
+        colors = newColors;
+    }
+
+    public static int getTextureId() {
+        return textureId;
+    }
+
+    public static void loadImage() {
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            IntBuffer w = stack.mallocInt(1);
+            IntBuffer h = stack.mallocInt(1);
+            IntBuffer comp = stack.mallocInt(1);
+
+            ByteBuffer img = STBImage.stbi_load("res/img.png", w, h, comp, 3);
+            if (img != null) {
+                img.flip();
+
+                GL33.glBindTexture(GL33.GL_TEXTURE_2D, textureId);
+                GL33.glTexImage2D(GL33.GL_TEXTURE_2D, 0, GL33.GL_RGB, w.get(), h.get(), 0, GL33.GL_RGB, GL33.GL_UNSIGNED_BYTE, img);
+                GL33.glGenerateMipmap(GL33.GL_TEXTURE_2D);
+
+                STBImage.stbi_image_free(img);
+            }
+        }
+    }
+    public static Player mainPlayer;
+    public static float playerTopLeftX = -0.125f;
+    public static float playerTopLeftY = 0.125f;
 
 
-    public void render() {
-        matrix.get(matrixFloatBuffer);
-        GL33.glUniformMatrix4fv(uniformMatrixLocation, false, matrixFloatBuffer);
+    public static void init(long window) {
+        Shaders.initShaders();
+        Player.loadImage();
+        createPlayer();
+    }
 
+    public static void render(long window) {
+        renderPlayer(Player.getMatrix());
+    }
+
+    public static void update(long window) {
+        movePlayer(window, Player.getMatrix());
+    }
+
+    public static void createPlayer() {
+        mainPlayer = new Player();
+    }
+
+    public static void renderPlayer(Matrix4f matrix) {
+        matrix.get(Player.getMatrixBuffer());
+
+        GL33.glUniformMatrix4fv(Player.getUniformMatrixLocation(), false, Player.getMatrixBuffer());
         GL33.glUseProgram(Shaders.shaderProgramId);
-
-        GL33.glBindVertexArray(squareVaoId);
-        GL33.glDrawElements(GL33.GL_TRIANGLES, indices.length, GL33.GL_UNSIGNED_INT, 0);
+        GL33.glBindVertexArray(mainPlayer.getSquareVaoId());
+        GL33.glDrawElements(GL33.GL_TRIANGLES, mainPlayer.getVertices().length, GL33.GL_UNSIGNED_INT, 0);
     }
 
-    public void update(long window) {
-        if (GLFW.glfwGetKey(window, GLFW.GLFW_KEY_W) == GLFW.GLFW_PRESS) {
-            matrix = matrix.translate(0f, 0.01f, 0f);
-            this.y = y + 0.01f;
+
+    public static boolean right = true;
+    public static boolean up = false;
+    public static int timer = 0;
+    static float baseSpeed = 0.01f;
+    static float slowSpeed = 0.75f * baseSpeed;
+    static float fastSpeed = baseSpeed;
+
+
+
+    public static void movePlayer(long window, Matrix4f matrix) {
+        if (playerTopLeftX > 0.75f) {
+            right = false;
+        }
+        else if (playerTopLeftX < -1f) {
+            right = true;
         }
 
-        if (GLFW.glfwGetKey(window, GLFW.GLFW_KEY_S) == GLFW.GLFW_PRESS) {
-            matrix = matrix.translate(0, -0.01f, 0f);
-            this.y = y - 0.01f;
+        if (playerTopLeftY > 1f) {
+            up = false;
+        }
+        else if (playerTopLeftY < -0.75f) {
+            up = true;
         }
 
-        if (GLFW.glfwGetKey(window, GLFW.GLFW_KEY_D) == GLFW.GLFW_PRESS) {
-            matrix = matrix.translate(0.01f, 0f, 0f);
-            this.x = x + 0.01f;
+        if (!right && !up) {
+            matrix = matrix.translate(-fastSpeed, -slowSpeed, 0f);
+            playerTopLeftX -= fastSpeed;
+            playerTopLeftY -= slowSpeed;
+        }
+        else if (!right && up) {
+            matrix = matrix.translate(-fastSpeed, slowSpeed, 0f);
+            playerTopLeftX -= fastSpeed;
+            playerTopLeftY += slowSpeed;
+        }
+        else if (right && !up) {
+            matrix = matrix.translate(fastSpeed, -slowSpeed, 0f);
+            playerTopLeftX += fastSpeed;
+            playerTopLeftY -= slowSpeed;
+        }
+        else {
+            matrix = matrix.translate(fastSpeed, slowSpeed, 0f);
+            playerTopLeftX += fastSpeed;
+            playerTopLeftY += slowSpeed;
         }
 
-        if (GLFW.glfwGetKey(window, GLFW.GLFW_KEY_A) == GLFW.GLFW_PRESS) {
-            matrix = matrix.translate(-0.01f, 0f, 0f);
-            this.x = x - 0.01f;
+        timer++;
+        if (timer % 100 == 0) {
+            System.out.println("X: " + playerTopLeftX + "\t|\tY: " + playerTopLeftY);
+            timer = 0;
         }
-        matrix.get(matrixFloatBuffer);
-        GL33.glUniformMatrix4fv(uniformMatrixLocation, false, matrixFloatBuffer);
-    }
-
-    public float getx() {
-        return x;
-    }
-
-    public float gety() {
-        return y;
-    }
-
-    public float getz() {
-        return z;
-    }
-
-    public void colorgreen() {
-        GL33.glBindBuffer(GL33.GL_ARRAY_BUFFER, squareColorId);
-        cfb.put(green).flip();
-
-        GL33.glVertexAttribPointer(1, 4, GL33.GL_FLOAT, false, 0, 0);
-        GL33.glBufferData(GL33.GL_ARRAY_BUFFER, cfb, GL33.GL_STATIC_DRAW);
-        GL33.glEnableVertexAttribArray(1);
-    }
-
-    public void colorred() {
-        GL33.glBindBuffer(GL33.GL_ARRAY_BUFFER, squareColorId);
-        cfb.put(red).flip();
-
-        GL33.glVertexAttribPointer(1, 4, GL33.GL_FLOAT, false, 0, 0);
-        GL33.glBufferData(GL33.GL_ARRAY_BUFFER, cfb, GL33.GL_STATIC_DRAW);
-        GL33.glEnableVertexAttribArray(1);
     }
 }

@@ -30,46 +30,23 @@ public class Window {
         GL33.glViewport(0, 0, W, H);
         GLFW.glfwSetFramebufferSizeCallback(window, (win, w, h) -> GL33.glViewport(0, 0, w, h));
         Shaders.initShaders();
-        Player player = new Player(0f, 0f, 0.25f);
 
-        String[] filesplit = Maze.split("\n");
-        for (String s : filesplit) {
-            String[] filesplit2 = s.split(";");
-            Player square = new Player(Float.parseFloat(filesplit2[0]), Float.parseFloat(filesplit2[1]), Float.parseFloat(filesplit2[2]));
-            squares.add(square);
-        }
+        Player.init(window);
 
+        GL33.glPolygonMode(GL33.GL_FRONT_AND_BACK, GL33.GL_LINE);
         while (!GLFW.glfwWindowShouldClose(window)) {
-            if (GLFW.glfwGetKey(window, GLFW.GLFW_KEY_ESCAPE) == GLFW.GLFW_PRESS)
+
+            if (GLFW.glfwGetKey(window, GLFW.GLFW_KEY_ESCAPE) == GLFW.GLFW_PRESS) {
                 GLFW.glfwSetWindowShouldClose(window, true);
-            boolean collision = false;
+            }
             GL33.glClearColor(0f, 0f, 0f, 1f);
             GL33.glClear(GL33.GL_COLOR_BUFFER_BIT);
-            for (Player square : squares) {
-                square.render();
-            }
-            for (Player square : squares) {
-                if (contact(player, square))
-                    collision = true;
-            }
-            player.update(window);
-            player.render();
-            if (collision) {
-                player.colorred();
-            } else {
-                player.colorgreen();
-            }
-
+            Player.render(window);
+            Player.update(window);
             GLFW.glfwSwapBuffers(window);
             GLFW.glfwPollEvents();
         }
-        GLFW.glfwTerminate();
-    }
 
-    public static boolean contact(Player a, Player b) {
-        return a.gety() + a.getz() / 2 + a.getz() > b.gety() &&
-                a.gety() + a.getz() / 2 < b.gety() + b.getz() &&
-                a.getx() < b.getx() + b.getz() &&
-                a.getx() + a.getz() > b.getx();
+        GLFW.glfwTerminate();
     }
 }
