@@ -2,9 +2,9 @@ cz/educanet/Shaders.java
  cz.educanet.Shaders
 cz/educanet/utils/FileUtils.java
  cz.educanet.utils.FileUtils
-cz/educanet/Window.java
- cz.educanet.Window
 cz/educanet/Main.java
  cz.educanet.Main
+cz/educanet/Window.java
+ cz.educanet.Window
 cz/educanet/Player.java
  cz.educanet.Player

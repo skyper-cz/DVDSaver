@@ -2,7 +2,6 @@ package cz.educanet;
 
 import org.joml.Matrix4f;
 import org.lwjgl.BufferUtils;
-import org.lwjgl.glfw.GLFW;
 import org.lwjgl.opengl.GL33;
 import org.lwjgl.stb.STBImage;
 import org.lwjgl.system.MemoryStack;
